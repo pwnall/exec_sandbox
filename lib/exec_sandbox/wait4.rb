@@ -7,22 +7,22 @@ module Wait4
   #
   # @param [Fixnum] pid the PID of the process to wait for; should be a child of
   #                     this process
-  # @return [Fixnum, Hash] process exit status and resource usage
+  # @return [Hash] exit code and resource usage information
   def self.wait4(pid)
     status_ptr = FFI::MemoryPointer.new :int
     rusage = ExecSandbox::Wait4::Rusage.new
     returned_pid = LibC.wait4(pid, status_ptr, 0, rusage.pointer)
     raise SystemCallError, FFI.errno if returned_pid < 0
-    status = status_ptr.read_int
+    status = { :bits => status_ptr.read_int }
     status_ptr.free
     
-    usage = {}
-    usage[:user_time] = rusage[:ru_utime_sec] +
+    status[:exit_code] = status[:bits] >> 8
+    status[:user_time] = rusage[:ru_utime_sec] +
                         rusage[:ru_utime_usec] * 0.000_001
-    usage[:system_time] = rusage[:ru_utime_sec] +
+    status[:system_time] = rusage[:ru_utime_sec] +
                           rusage[:ru_utime_usec] * 0.000_001 
-    usage[:rss] = rusage[:ru_maxrss] / 1024.0
-    return status >> 8, usage
+    status[:rss] = rusage[:ru_maxrss] / 1024.0
+    return status
   end
 
   # Maps wait4 in libc. 
