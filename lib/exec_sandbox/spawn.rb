@@ -7,15 +7,15 @@ module Spawn
   #
   # @param [String, Array] command the command to be executed via exec
   # @param [Hash] io see limit_io
-  # @param [Hash] resources see limit_resources
   # @param [Hash] principal the principal for the enw process
+  # @param [Hash] resources see limit_resources
   # @return [Fixnum] the child's PID
-  def self.spawn(command, io, resources, principal)
+  def self.spawn(command, io = {}, principal = {}, resources = {})
     max_fd = 256  # TODO(pwnall): get the limit properly
     
     fork do
       limit_io io
-      limit_resources limits
+      limit_resources resources
       if command.respond_to? :to_str
         Process.exec command
       else
@@ -30,7 +30,9 @@ module Spawn
   #                  all file descriptors not covered by io will be closed
   def self.limit_io(io)
     [:stdin, :stdout, :stderr].each_with_index do |sym, fd_num|
-      io[fd_num] = v if v = io.delete(sym)
+      if target = io.delete(sym)
+        io[fd_num] = target
+      end
     end
     io.each do |k, v|
       if v.respond_to?(:to_str)
@@ -41,6 +43,7 @@ module Spawn
     end
     
     # Close all file descriptors.
+    max_fd = 256  # TODO(pwnall): get this from some syscall
     0.upto(max_fd) do |fd|
       next if io[fd]
       IO.for_fd(fd).close rescue nil

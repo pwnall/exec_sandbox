@@ -2,7 +2,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe ExecSandbox::Wait4 do
   describe '#wait4' do
-    describe 'on write_arg' do
+    describe 'write_arg.rb' do
       before do
         pid = Kernel.fork { Process.exec bin_fixture(:exit_arg), '42' }
         @status = ExecSandbox::Wait4.wait4 pid
