@@ -3,11 +3,64 @@ module ExecSandbox
 
 # Manages sandboxed processes.
 module Spawn
-  # Waits for a child process to finish and collects exit information.
+  # Spawns a child process.
   #
-  # @param [Fixnum] pid the PID of the child process to wait for
-  def reap_child(pid)
+  # @param [String, Array] command the command to be executed via exec
+  # @param [Hash] io see limit_io
+  # @param [Hash] resources see limit_resources
+  # @param [Hash] principal the principal for the enw process
+  # @return [Fixnum] the child's PID
+  def self.spawn(command, io, resources, principal)
+    max_fd = 256  # TODO(pwnall): get the limit properly
     
+    fork do
+      limit_io io
+      limit_resources limits
+      if command.respond_to? :to_str
+        Process.exec command
+      else
+        Process.exec *command
+      end
+    end
+  end
+
+  # Constraints the available file descriptors.
+  #
+  # @param [Hash] io associates file descriptors with IO objects or file paths;
+  #                  all file descriptors not covered by io will be closed
+  def self.limit_io(io)
+    [:stdin, :stdout, :stderr].each_with_index do |sym, fd_num|
+      io[fd_num] = v if v = io.delete(sym)
+    end
+    io.each do |k, v|
+      if v.respond_to?(:to_str)
+        IO.for_fd(k).reopen(v, 'r+')
+      else
+        IO.for_fd(k).reopen(v)
+      end
+    end
+    
+    # Close all file descriptors.
+    0.upto(max_fd) do |fd|
+      next if io[fd]
+      IO.for_fd(fd).close rescue nil
+    end
+  end
+  
+  # Sets the process' principal for access control.
+  #
+  # @param [Hash] principal information about the process' principal
+  # @option principal :uid the new user ID
+  # @option principal :gid the new group ID
+  def self.set_principal(principal)
+    if principal[:uid]
+      Process.uid = principal[:uid]
+      Process.euid = principal[:uid]
+    end
+    if principal[:gid]
+      Process.gid = principal[:gid]
+      Process.egid = principal[:gid]
+    end
   end
   
   # Constrains the resource usage of the current process.
@@ -28,7 +81,7 @@ module Spawn
   #     heap) and stack; allow slack for the libraries used by the process;
   #     mostly useful to prevent a process from freezing the machine by pushing
   #     everything into swap
-  def limit_resources(limits)
+  def self.limit_resources(limits)
     if limits[:cpu]
       Process.setrlimit Process::RLIMIT_CPU, limits[:cpu], limits[:cpu]
     end
