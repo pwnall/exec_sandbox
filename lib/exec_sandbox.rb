@@ -4,6 +4,9 @@
 # Standard library
 require 'etc'
 
+# Gems
+require 'ffi'
+
 # TODO(pwnall): documentation
 module ExecSandbox
   

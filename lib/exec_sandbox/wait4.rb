@@ -7,8 +7,7 @@ module Wait4
   #
   # @param [Fixnum] pid the PID of the process to wait for; should be a child of
   #                     this process
-  # @return [Fixnum, ExecSandbox::Wait4::Rusage] process exit status and resource
-  #                                              usage
+  # @return [Fixnum, Hash] process exit status and resource usage
   def self.wait4(pid)
     status_ptr = FFI::MemoryPointer.new :int
     rusage = ExecSandbox::Wait4::Rusage.new
@@ -16,7 +15,14 @@ module Wait4
     raise SystemCallError, FFI.errno if returned_pid < 0
     status = status_ptr.read_int
     status_ptr.free
-    return status, rusage
+    
+    usage = {}
+    usage[:user_time] = rusage[:ru_utime_sec] +
+                        rusage[:ru_utime_usec] * 0.000_001
+    usage[:system_time] = rusage[:ru_utime_sec] +
+                          rusage[:ru_utime_usec] * 0.000_001 
+    usage[:rss] = rusage[:ru_maxrss] / 1024.0
+    return status >> 8, usage
   end
 
   # Maps wait4 in libc. 
@@ -70,7 +76,7 @@ module Wait4
     # became runnable or the current process used up its time slice.
            :ru_nivcsw, :long,
     # Padding, so we don't crash if the struct gets ammended on newer OSes.
-           :padding, :byte, 256
+           :padding, :uchar, 256
   end  # struct ExecSandbox::Wait4::Rusage
 
 end  # module ExecSandbox::Wait4
