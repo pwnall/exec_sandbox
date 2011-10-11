@@ -18,8 +18,8 @@ module Users
       unless group_id
         # Create a group with the same name as the user.
         group_id = `dscl . -list /Groups`.split.
-            map { |g| `dscl . -read /Groups/#{g} UniqueID`.split.last.to_i }.
-            sort.last + 1
+            map { |g| `dscl . -read /Groups/#{g} PrimaryGroupID`.split.last.
+            to_i }.sort.last + 1
 
         # Simulate adduser's group creation.
         command_prefix = ['dscl', '.', '-create', "/Groups/#{user_name}"]
