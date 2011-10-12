@@ -9,7 +9,7 @@ describe ExecSandbox::Spawn do
   describe '#spawn IO redirection' do
     before do
       @temp_in = Tempfile.new 'exec_sandbox_rspec'
-      @temp_in.write "Spawn test\n"
+      @temp_in.write "Spawn IO test\n"
       @temp_in.close
       @temp_out = Tempfile.new 'exec_sandbox_rspec'
       @temp_out.close
@@ -27,7 +27,7 @@ describe ExecSandbox::Spawn do
       it 'should write successfully' do
         @temp_out.open
         begin
-          @temp_out.read.should == "Spawn test\nSpawn test\n"
+          @temp_out.read.should == "Spawn IO test\nSpawn IO test\n"
         ensure
           @temp_out.close
         end
@@ -69,13 +69,108 @@ describe ExecSandbox::Spawn do
         @status[:exit_code].should_not == 0
       end
     end
-    
-    describe '#spawn principal' do
-      
+  end
+
+  describe '#spawn principal' do
+    before do
+      @temp = Tempfile.new 'exec_sandbox_rspec'
+      @temp_path = @temp.path
+      @temp.close
+    end
+    after do
+      File.unlink(@temp_path) if File.exist?(@temp_path)
     end
     
-    describe '#spawn resource limits' do
+    describe 'with root credentials' do
+      before do
+        pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
+            @temp_path, "Spawn uid test\n"], {}, {:uid => 0, :gid => 0}
+        @status = ExecSandbox::Wait4.wait4 pid
+        @fstat = File.stat(@temp_path)
+      end
       
+      it 'should not crash' do
+        @status[:exit_code].should == 0
+      end
+      
+      it 'should have the UID set to root' do
+        @fstat.uid.should == 0
+      end
+      it 'should have the GID set to root' do
+        @fstat.gid.should == 0
+      end
+
+      it 'should have the correct output' do
+        File.read(@temp_path).should == "Spawn uid test\n"
+      end
     end
+    
+    describe 'with non-root credentials' do
+      before do
+        @path = @temp.path
+        @temp.unlink
+        pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
+            @temp_path, "Spawn uid test\n"], {},
+            {:uid => test_uid, :gid => test_gid}
+        @status = ExecSandbox::Wait4.wait4 pid
+      end
+      
+      it 'should not crash' do
+        @status[:exit_code].should == 0
+      end
+      
+      it 'should have the UID set to the test user' do
+        File.stat(@temp_path).uid.should == test_uid
+      end
+      it 'should have the GID set to the test group' do
+        File.stat(@temp_path).gid.should == test_gid
+      end
+      
+      it 'should have the correct output' do
+        File.read(@temp_path).should == "Spawn uid test\n"
+      end
+    end
+
+    describe 'with non-root credentials and a root-owned redirect file' do
+      before do
+        @path = @temp.path
+        File.chmod 0700, @temp.path
+        pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
+            @temp_path, "Spawn uid test\n"], {:stderr => STDERR},
+            {:uid => test_uid, :gid => test_gid}
+        @status = ExecSandbox::Wait4.wait4 pid
+      end
+      
+      it 'should crash (euid is set correctly)' do
+        @status[:exit_code].should_not == 0
+      end
+
+      it 'should not have the correct output' do
+        File.read(@temp_path).should_not == "Spawn uid test\n"
+      end
+    end
+    
+    describe 'with non-root credentials and a root-owned redirect file' do
+      before do
+        @path = @temp.path
+        File.chmod 070, @temp.path
+        pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
+            @temp_path, "Spawn uid test\n"], {:stderr => STDERR},
+            {:uid => test_uid, :gid => test_gid}
+        @status = ExecSandbox::Wait4.wait4 pid
+      end
+      
+      it 'should crash (egid is set correctly)' do
+        @status[:exit_code].should_not == 0
+      end
+
+      it 'should not have the correct output' do
+        File.read(@temp_path).should_not == "Spawn uid test\n"
+      end
+    end
+  end
+  
+  describe '#spawn resource limits' do
+    
   end
 end

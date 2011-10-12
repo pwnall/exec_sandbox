@@ -16,6 +16,7 @@ module Spawn
     fork do
       limit_io io
       limit_resources resources
+      set_principal principal
       if command.respond_to? :to_str
         Process.exec command
       else
@@ -56,13 +57,11 @@ module Spawn
   # @option principal :uid the new user ID
   # @option principal :gid the new group ID
   def self.set_principal(principal)
-    if principal[:uid]
-      Process.uid = principal[:uid]
-      Process.euid = principal[:uid]
-    end
     if principal[:gid]
-      Process.gid = principal[:gid]
-      Process.egid = principal[:gid]
+      Process::Sys.setresgid principal[:gid], principal[:gid], principal[:gid]
+    end
+    if principal[:uid]
+      Process::Sys.setresuid principal[:uid], principal[:uid], principal[:uid]
     end
   end
   
