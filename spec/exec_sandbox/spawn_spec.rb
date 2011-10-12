@@ -135,7 +135,7 @@ describe ExecSandbox::Spawn do
       before do
         File.chmod 0700, @temp_path
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
-            @temp_path, "Spawn uid test\n"], {:stderr => STDERR},
+            @temp_path, "Spawn uid test\n"], {},
             {:uid => test_uid, :gid => test_gid}
         @status = ExecSandbox::Wait4.wait4 pid
       end
@@ -153,7 +153,7 @@ describe ExecSandbox::Spawn do
       before do
         File.chmod 070, @temp_path
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
-            @temp_path, "Spawn uid test\n"], {:stderr => STDERR},
+            @temp_path, "Spawn uid test\n"], {},
             {:uid => test_uid, :gid => test_gid}
         @status = ExecSandbox::Wait4.wait4 pid
       end
