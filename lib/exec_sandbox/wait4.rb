@@ -16,7 +16,8 @@ module Wait4
     status = { :bits => status_ptr.read_int }
     status_ptr.free
     
-    status[:exit_code] = status[:bits] >> 8
+    signal_code = status[:bits] & 0x7f
+    status[:exit_code] = (signal_code != 0) ? -signal_code : status[:bits] >> 8
     status[:user_time] = rusage[:ru_utime_sec] +
                         rusage[:ru_utime_usec] * 0.000_001
     status[:system_time] = rusage[:ru_utime_sec] +

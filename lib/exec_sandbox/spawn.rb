@@ -11,16 +11,28 @@ module Spawn
   # @param [Hash] resources see limit_resources
   # @return [Fixnum] the child's PID
   def self.spawn(command, io = {}, principal = {}, resources = {})
-    max_fd = 256  # TODO(pwnall): get the limit properly
-    
     fork do
-      limit_io io
+      is_19 = Kernel.respond_to? :spawn
+      if is_19 = Kernel.respond_to?(:spawn)
+        io = io.merge :close_others => true
+      else
+        limit_io io
+      end
       limit_resources resources
       set_principal principal
       if command.respond_to? :to_str
-        Process.exec command
+        if is_19
+          Process.exec command, io
+        else
+          Process.exec command
+        end
       else
-        Process.exec *command
+        if is_19
+          command = command.dup.push(io)
+          Process.exec *command
+        else
+          Process.exec *command
+        end
       end
     end
   end
@@ -30,24 +42,24 @@ module Spawn
   # @param [Hash] io associates file descriptors with IO objects or file paths;
   #                  all file descriptors not covered by io will be closed
   def self.limit_io(io)
-    [:stdin, :stdout, :stderr].each_with_index do |sym, fd_num|
+    [:in, :out, :err].each_with_index do |sym, fd_num|
       if target = io.delete(sym)
         io[fd_num] = target
       end
     end
     io.each do |k, v|
-      if v.respond_to?(:to_str)
+      if v.respond_to?(:fileno)
+        if v.fileno != k
+          IO.for_fd(k).close
+          v.fcntl Fcntl::F_DUPFD, k 
+        end
+      else
         IO.for_fd(k).close
         open_fd = IO.sysopen(v, 'r+')
         if open_fd != k
           open_io = IO.for_fd open_fd
           open_io.fcntl Fcntl::F_DUPFD, k
           open_io.close
-        end
-      else
-        if v.fileno != k
-          IO.for_fd(k).close
-          v.fcntl Fcntl::F_DUPFD, k 
         end
       end
     end
