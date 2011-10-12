@@ -12,12 +12,12 @@ describe ExecSandbox::Wait4 do
         @status[:exit_code].should == 42
       end
       
-      it 'should not take more than 50ms of user time' do
-        @status[:user_time].should <= 0.050
+      it 'should not take more than 1s of user time' do
+        @status[:user_time].should < 1
       end
       
-      it 'should not take more than 50ms of system time' do
-        @status[:system_time].should <= 0.050
+      it 'should not take more than 1s of system time' do
+        @status[:system_time].should < 1
       end
     end
   end

@@ -58,10 +58,20 @@ module Spawn
   # @option principal :gid the new group ID
   def self.set_principal(principal)
     if principal[:gid]
-      Process::Sys.setresgid principal[:gid], principal[:gid], principal[:gid]
+      begin
+        Process::Sys.setresgid principal[:gid], principal[:gid], principal[:gid]
+      rescue NotImplementedError
+        Process.gid = principal[:gid]
+        Process.egid = principal[:gid]
+      end
     end
     if principal[:uid]
-      Process::Sys.setresuid principal[:uid], principal[:uid], principal[:uid]
+      begin
+        Process::Sys.setresuid principal[:uid], principal[:uid], principal[:uid]
+      rescue NotImplementedError
+        Process.uid = principal[:uid]
+        Process.euid = principal[:uid]
+      end
     end
   end
   
