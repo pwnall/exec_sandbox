@@ -152,8 +152,8 @@ describe ExecSandbox::Spawn do
     describe 'with non-root credentials and a root-owned redirect file' do
       before do
         File.chmod 070, @temp_path
-        pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
-            @temp_path, "Spawn uid test\n"], {},
+        pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg), @temp_path,
+            "Spawn uid test\n"], {},
             {:uid => test_uid, :gid => test_gid}
         @status = ExecSandbox::Wait4.wait4 pid
       end
@@ -169,6 +169,139 @@ describe ExecSandbox::Spawn do
   end
   
   describe '#spawn resource limits' do
+    before do
+      @temp = Tempfile.new 'exec_sandbox_rspec'
+      @temp_path = @temp.path
+      @temp.close
+    end
+    after do
+      File.unlink(@temp_path) if File.exist?(@temp_path)
+    end
     
+    describe 'buffer.rb' do
+      describe 'without limitations' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
+              (100 * 1024 * 1024).to_s], {:stderr => STDERR}, {}, {}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+
+        it 'should not crash' do
+          @status[:exit_code].should == 0
+        end
+        
+        it 'should output 100 megs' do
+          File.stat(@temp_path).size.should == 100 * 1024 * 1024
+        end
+      end
+      
+      describe 'with memory limitation' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
+              (100 * 1024 * 1024).to_s], {}, {}, {:data => 64 * 1024 * 1024}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+        
+        it 'should crash' do
+          @status[:exit_code].should_not == 0
+        end
+        
+        it 'should not have a chance to output data' do
+          File.stat(@temp_path).size.should == 0
+        end
+      end
+      
+      describe 'with output limitation' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
+              (100 * 1024 * 1024).to_s], {}, {}, {:file_size => 8 * 1024 * 1024}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+        
+        it 'should crash' do
+          @status[:exit_code].should_not == 0
+        end
+        
+        it 'should not output more than 16 megs' do
+          File.stat(@temp_path).size.should <= 16 * 1024 * 1024
+        end
+      end
+    end
+    
+    describe 'fork.rb' do
+      describe 'without limitations' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:fork), @temp_path,
+              10.to_s], {:stderr => STDERR}, {}, {}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+
+        it 'should not crash' do
+          @status[:exit_code].should == 0
+        end
+        
+        it 'should output 10 +es' do
+          File.stat(@temp_path).size.should == 10
+        end
+      end
+      
+      describe 'with sub-process limitation' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:fork), @temp_path,
+              10.to_s], {}, {}, {:processes => 4}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+        
+        it 'should crash' do
+          @status[:exit_code].should_not == 0
+        end
+        
+        it 'should output less than 5 +es' do
+          File.stat(@temp_path).size.should < 5
+        end
+      end
+    end
+    
+    describe 'churn.rb' do
+      describe 'without limitations' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:churn), @temp_path,
+              3.to_s], {:stderr => STDERR}, {}, {}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+
+        it 'should not crash' do
+          @status[:exit_code].should == 0
+        end
+        
+        it 'should run for at least 2 seconds' do
+          (@status[:user_time] + @status[:system_time]).should > 2
+        end
+        
+        it 'should output something' do
+          File.stat(@temp_path).size.should > 0
+        end
+      end
+      
+      describe 'with CPU time limitation' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:churn), @temp_path,
+              10.to_s], {}, {}, {:cpu => 1}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+
+        it 'should run for at least 0.5 seconds' do
+          (@status[:user_time] + @status[:system_time]).should >= 0.5
+        end
+
+        it 'should run for less than 2 seconds' do
+          (@status[:user_time] + @status[:system_time]).should < 2
+        end
+        
+        it 'should not have a chance to output' do
+          File.stat(@temp_path).size.should == 0
+        end
+      end
+    end
   end
 end
