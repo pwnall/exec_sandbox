@@ -2,7 +2,29 @@
 module ExecSandbox
 
 # Manages sandbox users.
+#
+# @see Users#temp
+# @see Users#destroy
 module Users
+  # Creates an unprivileged user.
+  #
+  # @return [String] the user's name
+  def self.temp(prefix = 'xsbx.rb')
+    loop do
+      user_name = prefix + '-%x.%x.%x' % [$PID, Time.now.to_i, rand(65536)]
+      etc = nil
+      begin
+        etc = Etc.getpwnam(name)
+      rescue ArgumentError
+        # User not found: good!
+      end
+      next if etc
+      
+      create user_name
+      return user_name
+    end
+  end
+  
   # Creates a user for unprivileged operations.
   #
   # @param [String] user_name the user's short (UNIX) name (should be unique)
@@ -10,7 +32,7 @@ module Users
   #                 primary group will be set to a new group
   #
   # @return [Fixnum] the new user's UID
-  def self.create_user_named(user_name, primary_group_name = nil)
+  def self.create(user_name, primary_group_name = nil)
     group_id = primary_group_name && Etc.getgrnam(primary_group_name).gid 
     
     if RUBY_PLATFORM =~ /darwin/  # OSX
@@ -80,10 +102,10 @@ module Users
     user_id
   end
   
-  # Removes a user that was previously created by create_user_named.
+  # Removes a user that was previously created by create.
   #
   # @param [String] user_name the user's short (UNIX) name
-  def self.destroy_user(user_name)
+  def self.destroy(user_name)
     user_pw = Etc.getpwnam(user_name)
     home_dir = user_pw.dir
     FileUtils.rm_rf home_dir

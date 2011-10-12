@@ -2,7 +2,11 @@
 # @author Victor Costan
 
 # Standard library
+require 'English'
 require 'etc'
+require 'fcntl'
+require 'tempfile'
+require 'tmpdir'
 
 # Gems
 require 'ffi'

@@ -5,5 +5,3 @@
 def bin_fixture(fixture_id)
   File.expand_path "#{File.dirname(__FILE__)}/../fixtures/#{fixture_id.to_s}.rb"
 end
-
-require 'tempfile'

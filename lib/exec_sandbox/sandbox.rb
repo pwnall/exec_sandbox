@@ -8,7 +8,7 @@ module Sandbox
   # @param [String] owner the name of a user who will be able to peek into the
   #                       sandbox
   def initialize(owner = nil)
-    
+    @us
   end
 end  # module ExecSandbox::Sandbox
   

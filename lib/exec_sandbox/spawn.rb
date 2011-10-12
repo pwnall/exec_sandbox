@@ -37,9 +37,18 @@ module Spawn
     end
     io.each do |k, v|
       if v.respond_to?(:to_str)
-        IO.for_fd(k).reopen(v, 'r+')
+        IO.for_fd(k).close
+        open_fd = IO.sysopen(v, 'r+')
+        if open_fd != k
+          open_io = IO.for_fd open_fd
+          open_io.fcntl Fcntl::F_DUPFD, k
+          open_io.close
+        end
       else
-        IO.for_fd(k).reopen(v)
+        if v.fileno != k
+          IO.for_fd(k).close
+          v.fcntl Fcntl::F_DUPFD, k 
+        end
       end
     end
     
@@ -104,18 +113,20 @@ module Spawn
       Process.setrlimit Process::RLIMIT_CPU, limits[:cpu], limits[:cpu]
     end
     if limits[:processes]
-      Process.setrlimit Process::NPROC, limits[:processes], limits[:processes]
+      Process.setrlimit Process::RLIMIT_NPROC, limits[:processes],
+                                               limits[:processes]
     end
     if limits[:file_size]
-      Process.setrlimit Process::FSIZE, limits[:file_size], limits[:file_size]
+      Process.setrlimit Process::RLIMIT_FSIZE, limits[:file_size],
+                                               limits[:file_size]
     end
     if limits[:open_files]
-      Process.setrlimit Process::NOFILE, limits[:open_files],
-                                         limits[:open_files]
+      Process.setrlimit Process::RLIMIT_NOFILE, limits[:open_files],
+                                                limits[:open_files]
     end
     if limits[:data]
-      Process.setrlimit Process::DATA, limits[:data], limits[:data]
-      Process.setrlimit Process::STACK, limits[:data], limits[:data]
+      Process.setrlimit Process::RLIMIT_DATA, limits[:data], limits[:data]
+      Process.setrlimit Process::RLIMIT_STACK, limits[:data], limits[:data]
     end
   end
 end  # module ExecSandbox::Spawn
