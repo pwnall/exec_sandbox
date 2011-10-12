@@ -67,6 +67,12 @@ module Spawn
     end
     if principal[:uid]
       begin
+        Process.initgroups Etc.getpwuid(principal[:uid]).name,
+                           principal[:gid] || Process.gid
+      rescue NotImplementedError
+      end
+      
+      begin
         Process::Sys.setresuid principal[:uid], principal[:uid], principal[:uid]
       rescue NotImplementedError
         Process.uid = principal[:uid]

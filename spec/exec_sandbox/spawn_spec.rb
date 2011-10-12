@@ -84,7 +84,8 @@ describe ExecSandbox::Spawn do
     describe 'with root credentials' do
       before do
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
-            @temp_path, "Spawn uid test\n"], {}, {:uid => 0, :gid => 0}
+            @temp_path, "Spawn uid test\n"], {:stderr => STDERR},
+            {:uid => 0, :gid => 0}
         @status = ExecSandbox::Wait4.wait4 pid
         @fstat = File.stat(@temp_path)
       end
@@ -107,10 +108,9 @@ describe ExecSandbox::Spawn do
     
     describe 'with non-root credentials' do
       before do
-        @path = @temp.path
         @temp.unlink
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
-            @temp_path, "Spawn uid test\n"], {},
+            @temp_path, "Spawn uid test\n"], {:stderr => STDERR},
             {:uid => test_uid, :gid => test_gid}
         @status = ExecSandbox::Wait4.wait4 pid
       end
@@ -133,8 +133,7 @@ describe ExecSandbox::Spawn do
 
     describe 'with non-root credentials and a root-owned redirect file' do
       before do
-        @path = @temp.path
-        File.chmod 0700, @temp.path
+        File.chmod 0700, @temp_path
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
             @temp_path, "Spawn uid test\n"], {:stderr => STDERR},
             {:uid => test_uid, :gid => test_gid}
@@ -152,8 +151,7 @@ describe ExecSandbox::Spawn do
     
     describe 'with non-root credentials and a root-owned redirect file' do
       before do
-        @path = @temp.path
-        File.chmod 070, @temp.path
+        File.chmod 070, @temp_path
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
             @temp_path, "Spawn uid test\n"], {:stderr => STDERR},
             {:uid => test_uid, :gid => test_gid}
