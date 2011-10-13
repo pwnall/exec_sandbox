@@ -5,6 +5,7 @@
 require 'English'
 require 'etc'
 require 'fcntl'
+require 'fileutils'
 require 'tempfile'
 require 'tmpdir'
 
@@ -16,7 +17,6 @@ module ExecSandbox
 end  # namespace ExecSandbox
 
 # Code
-require 'exec_sandbox/dir.rb'
 require 'exec_sandbox/sandbox.rb'
 require 'exec_sandbox/spawn.rb'
 require 'exec_sandbox/users.rb'

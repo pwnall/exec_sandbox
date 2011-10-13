@@ -26,7 +26,7 @@ module Wait4
     return status
   end
 
-  # Maps wait4 in libc. 
+  # Maps wait4 in libc.
   module LibC
     extend FFI::Library
     ffi_lib FFI::Library::LIBC

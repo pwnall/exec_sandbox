@@ -12,27 +12,13 @@ module Spawn
   # @return [Fixnum] the child's PID
   def self.spawn(command, io = {}, principal = {}, resources = {})
     fork do
-      is_19 = Kernel.respond_to? :spawn
-      if is_19 = Kernel.respond_to?(:spawn)
-        io = io.merge :close_others => true
-      else
-        limit_io io
-      end
+      limit_io io
       limit_resources resources
       set_principal principal
       if command.respond_to? :to_str
-        if is_19
-          Process.exec command, io
-        else
-          Process.exec command
-        end
+        Process.exec command
       else
-        if is_19
-          command = command.dup.push(io)
-          Process.exec *command
-        else
-          Process.exec *command
-        end
+        Process.exec *command
       end
     end
   end
@@ -50,34 +36,36 @@ module Spawn
     io.each do |k, v|
       if v.respond_to?(:fileno)
         if v.fileno != k
-          IO.for_fd(k).close
-          v.fcntl Fcntl::F_DUPFD, k 
+          LibC.close k
+          LibC.dup2 v.fileno, k
         end
       else
-        IO.for_fd(k).close
+        LibC.close k
         open_fd = IO.sysopen(v, 'r+')
         if open_fd != k
-          open_io = IO.for_fd open_fd
-          open_io.fcntl Fcntl::F_DUPFD, k
-          open_io.close
+          LibC.dup2 open_fd, k
+          LibC.close open_fd
         end
       end
     end
     
     # Close all file descriptors.
-    max_fd = 256  # TODO(pwnall): get this from some syscall
+    max_fd = LibC.getdtablesize
     0.upto(max_fd) do |fd|
       next if io[fd]
-      IO.for_fd(fd).close rescue nil
+      LibC.close fd
     end
   end
   
   # Sets the process' principal for access control.
   #
   # @param [Hash] principal information about the process' principal
-  # @option principal :uid the new user ID
-  # @option principal :gid the new group ID
+  # @option principal [String] :dir the process' working directory
+  # @option principal [Fixnum] :uid the new user ID
+  # @option principal [Fixnum] :gid the new group ID
   def self.set_principal(principal)
+    Dir.chdir principal[:dir] if principal[:dir]
+    
     if principal[:gid]
       begin
         Process::Sys.setresgid principal[:gid], principal[:gid], principal[:gid]
@@ -141,6 +129,15 @@ module Spawn
       Process.setrlimit Process::RLIMIT_STACK, limits[:data], limits[:data]
     end
   end
+  
+  # Maps raw I/O functions.
+  module LibC
+    extend FFI::Library
+    ffi_lib FFI::Library::LIBC
+    attach_function :close, [:int], :int
+    attach_function :getdtablesize, [], :int
+    attach_function :dup2, [:int, :int], :int
+  end  # module ExecSandbox::Spawn::Libc
 end  # module ExecSandbox::Spawn
   
 end  # namespace ExecSandbox

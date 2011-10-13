@@ -166,6 +166,26 @@ describe ExecSandbox::Spawn do
         File.read(@temp_path).should_not == "Spawn uid test\n"
       end
     end
+    
+    describe 'with a working directory' do
+      before do
+        @temp_dir = Dir.mktmpdir 'exec_sandbox_rspec'
+        pid = ExecSandbox::Spawn.spawn [bin_fixture(:pwd), @temp_path],
+            {}, {:dir => @temp_dir}        
+        @status = ExecSandbox::Wait4.wait4 pid
+      end
+      after do
+        Dir.rmdir @temp_dir
+      end
+      
+      it 'should not crash' do
+        @status[:exit_code].should == 0
+      end
+      
+      it 'should set the working directory' do
+        File.read(@temp_path).should == @temp_dir
+      end
+    end
   end
   
   describe '#spawn resource limits' do
