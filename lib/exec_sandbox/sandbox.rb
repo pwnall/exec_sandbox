@@ -9,21 +9,17 @@ class Sandbox
   # Empty sandbox.
   #
   # @param [String] admin the name of a user who will be able to peek into the
-  #                       sandbox (optional)
-  def initialize(admin = nil)
+  #                       sandbox
+  def initialize(admin)
     @user_name = ExecSandbox::Users.temp
     user_pwd = Etc.getpwnam @user_name
     @user_uid = user_pwd.uid
     @user_gid = user_pwd.gid
     @path = user_pwd.dir
-    if @admin_name = admin
-      admin_pwd = Etc.getpwnam(@admin_name)
-      @admin_uid = admin_pwd.uid
-      @admin_gid = admin_pwd.gid
-    else
-      @admin_uid = @user_uid
-      @admin_gid = @user_gid
-    end
+    @admin_name = admin
+    admin_pwd = Etc.getpwnam(@admin_name)
+    @admin_uid = admin_pwd.uid
+    @admin_gid = admin_pwd.gid
     @destroyed = false
     
     # principal argument for Spawn.spawn()
@@ -61,11 +57,14 @@ class Sandbox
   # @param [String] from relative path to the sandbox file or directory
   # @param [String] to path where the file/directory will be copied
   # @param [Hash] options tweaks the permissions and the path inside the sandbox
-  # @return [String] the path to the copied file / directory outside the sandbox
+  # @return [String] the path to the copied file / directory outside the
+  #                  sandbox, or nil if the file / directory does not exist
+  #                  inside the sandbox
   def pull(from, to)
     from = File.join @path, from
-    FileUtils.cp_r from, to
+    return nil unless File.exist? from
     
+    FileUtils.cp_r from, to
     FileUtils.chmod_R 0770, to
     FileUtils.chown_R @admin_uid, @admin_gid, to
     # NOTE: making a file / directory read-only is useless -- the sandboxed
@@ -145,7 +144,7 @@ end  # module ExecSandbox::Sandbox
   # @param [String] admin the name of a user who will be able to peek into the
   #                       sandbox (optional)
   # @return the value returned from the block passed to this method
-  def self.use(admin = nil, &block)
+  def self.use(admin = Etc.getlogin, &block)
     sandbox = ExecSandbox::Sandbox.new admin
     begin
       return yield(sandbox)
@@ -163,7 +162,7 @@ end  # module ExecSandbox::Sandbox
   # @param [String] admin the name of a user who will be able to peek into the
   #                       sandbox (optional)
   # @return the value returned from the block passed to this method
-  def self.open(admin = nil)
+  def self.open(admin = Etc.getlogin)
     ExecSandbox::Sandbox.new admin
   end
 end  # namespace ExecSandbox

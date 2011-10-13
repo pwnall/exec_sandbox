@@ -4,13 +4,16 @@
 # then outputs a '+' and exists.
 
 start = Time.now
-File.open(ARGV[0], 'wb') do |f|
-  f.sync = true
-  loop do
-    j = 0
-    1.upto(1_000_000) { |i| j = i * i + 100 }
-    break if Time.now - start >= ARGV[1].to_i
+loop do
+  j = 0
+  1.upto(1_000_000) { |i| j = i * i + 100 }
+  break if Time.now - start >= ARGV[1].to_i
+end
+
+unless ARGV[0].empty?
+  File.open(ARGV[0], 'wb') do |f|
+    f.sync = true
+    f.write '+'
+    f.flush
   end
-  f.write '+'
-  f.flush
 end
