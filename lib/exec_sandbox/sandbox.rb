@@ -118,10 +118,15 @@ class Sandbox
     out_wr.close if out_wr
     
     # Collect information about the child.
+    if out_rd
+      out_pieces = []
+      out_pieces << out_rd.read rescue nil
+    end
     status = ExecSandbox::Wait4.wait4 pid
     if out_rd
-      status[:out_data] = out_rd.read
+      out_pieces << out_rd.read rescue nil
       out_rd.close
+      status[:out_data] = out_pieces.join('')
     end
     status
   end

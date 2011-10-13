@@ -29,18 +29,37 @@ describe ExecSandbox::Sandbox do
   end
   
   describe 'pipe redirection' do
-    before do
-      ExecSandbox.use do |s|
-        @result = s.run bin_fixture(:duplicate), :in_data => "Pipe test\n"
+    describe 'duplicate.rb' do
+      before do
+        ExecSandbox.use do |s|
+          @result = s.run bin_fixture(:duplicate), :in_data => "Pipe test\n"
+        end
+      end
+      
+      it 'should not crash' do
+        @result[:exit_code].should == 0
+      end
+      
+      it 'should produce the correct result' do
+        @result[:out_data].should == "Pipe test\nPipe test\n"
       end
     end
     
-    it 'should not crash' do
-      @result[:exit_code].should == 0
-    end
-    
-    it 'should produce the correct result' do
-      @result[:out_data].should == "Pipe test\nPipe test\n"
+    describe 'buffer.rb' do
+      let(:buffer_size) { 1024 * 1024 }
+      before do
+        ExecSandbox.use do |s|
+          @result = s.run [bin_fixture(:buffer), '', buffer_size.to_s]
+        end
+      end
+      
+      it 'should not crash' do
+        @result[:exit_code].should == 0
+      end
+      
+      it 'should produce the correct result' do
+        @result[:out_data].should == "S" * buffer_size
+      end
     end
   end
   
