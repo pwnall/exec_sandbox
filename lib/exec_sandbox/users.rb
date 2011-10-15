@@ -81,10 +81,12 @@ module Users
       
     else  # Linux
       if group_id
-        command = ['useradd', '--gid', group_id.to_s,
-                            '--no-create-home', '--no-user-group', user_name]
+        command = ['useradd', '--gid', group_id.to_s, '--no-user-group',
+                   '--no-create-home', '--system',
+                   '--comment', 'exec_sandbox.rb temporary user', user_name]
       else
-        command = ['useradd', '--no-create-home', user_name]
+        command = ['useradd', '--user-group', '--no-create-home', '--system',
+                   '--comment', 'exec_sandbox.rb temporary user', user_name]
       end
       unless Kernel.system(*command)
         raise RuntimeError, "User creation failed at #{command.inspect}!"
