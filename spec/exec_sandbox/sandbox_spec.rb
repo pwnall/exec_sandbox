@@ -154,4 +154,24 @@ describe ExecSandbox::Sandbox do
       end
     end
   end
+  
+  describe '#cleanup' do
+    describe 'in a system with an open sandbox' do
+      before do
+        @all_users = ExecSandbox::Users.named(/.*/).sort
+        
+        @sandbox = ExecSandbox.open
+        @removed = ExecSandbox::Sandbox.cleanup
+      end
+      
+      it 'should not remove the sandbox user' do
+        ExecSandbox::Users.named(/.*/).sort.should == @all_users
+      end
+      
+      it 'should return an array with the sandbox user' do
+        @removed.should == [@sandbox.user_name]
+      end
+    end
+    
+  end
 end

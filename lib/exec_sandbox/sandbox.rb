@@ -6,6 +6,9 @@ class Sandbox
   # The path to the sandbox's working directory.
   attr_reader :path
   
+  # The un-privileged user that execs sandboxed binaries.
+  attr_reader :user_name
+  
   # Empty sandbox.
   #
   # @param [String] admin the name of a user who will be able to peek into the
@@ -141,6 +144,17 @@ class Sandbox
   # Cleans up when the sandbox object is garbage-collected.
   def finalize
     close
+  end
+
+  # Removes temporary users created by old sandboxes.
+  #
+  # Sandboxes usually clean up after themselves. For the rare circumstances
+  # where that doesn't happen (VM crash, Ctrl+C, SIGKILL), this method finds and
+  # cleans up the temporary users created for sandboxing.
+  #
+  # @return [Array<String>] the names of the deleted users
+  def self.cleanup
+    Users.destroy_temps
   end
 end  # module ExecSandbox::Sandbox
   

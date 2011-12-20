@@ -3,6 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 describe ExecSandbox::Users do
   let(:test_user) { 'exec_sandbox_rspec' }
   let(:test_group) { Etc.getgrgid(Etc.getpwnam(Etc.getlogin).gid).name }
+  let(:current_user) { Etc.getlogin }
   
   describe '#temp' do
     before { @user_name = ExecSandbox::Users.temp 'exsbx.rspec' }
@@ -119,6 +120,78 @@ describe ExecSandbox::Users do
   
       it "should not remove the generic group" do
         Etc.getgrnam(test_group).should_not be_nil
+      end
+    end
+  end
+  
+  describe '#named' do
+    describe 'with non-matching RegExp' do
+      it 'should not return any user' do
+        ExecSandbox::Users.named(/exec_sandbox_rspec/).should be_empty
+      end
+    end
+    
+    describe 'with non-matching String' do
+      it 'should not return any user' do
+        ExecSandbox::Users.named(/exec_sandbox_rspec/).should be_empty
+      end
+    end
+    
+    describe 'with the name of the current user' do
+      it 'should return the current user' do
+        ExecSandbox::Users.named(current_user).should == [current_user]
+      end
+    end
+    
+    describe 'with RegExp matching one user' do
+      before do
+        ExecSandbox::Users.create test_user, test_group
+      end      
+      after do
+        ExecSandbox::Users.destroy test_user
+      end
+      it 'should return that one user' do
+        ExecSandbox::Users.named(/exec.sandbox.rspe/).should ==
+            ['exec_sandbox_rspec']
+      end
+    end
+  end
+  
+  describe '#destroy_temps' do
+    let(:temp_prefix) { 'exsbx.rspec' }    
+
+    before do
+      @all_users = ExecSandbox::Users.named(/.*/).sort
+    end
+    
+    describe 'in a system with no temps' do
+      before do
+        @removed = ExecSandbox::Users.destroy_temps temp_prefix
+      end
+      
+      it 'should not remove any users' do
+        ExecSandbox::Users.named(/.*/).sort.should == @all_users
+      end
+      
+      it 'should return an empty array' do
+        @removed.should be_empty
+      end
+    end
+    
+    describe 'in a system with two temps' do
+      before do
+        @temp1 = ExecSandbox::Users.temp temp_prefix
+        @temp2 = ExecSandbox::Users.temp temp_prefix
+        
+        @removed = ExecSandbox::Users.destroy_temps temp_prefix
+      end
+
+      it 'should only remove the two temps' do
+        ExecSandbox::Users.named(/.*/).sort.should == @all_users
+      end
+            
+      it 'should return the two temps' do
+        @removed.sort.should == [@temp1, @temp2].sort
       end
     end
   end

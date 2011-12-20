@@ -8,6 +8,8 @@ module ExecSandbox
 module Users
   # Creates an unprivileged user.
   #
+  # @param [String] prefix used at the beginning of temporary user names to
+  #                        help identify the application that created the users
   # @return [String] the user's name
   def self.temp(prefix = 'xsbx.rb')
     loop do
@@ -152,6 +154,29 @@ module Users
         end
       end
     end  # RUBY_PLATFORM
+  end
+  
+  # Finds users whose names match a String or Regexp pattern.
+  #
+  # @param [String] pattern matched against user names using ===
+  # @return [Array<String>] names of users 
+  def self.named(pattern)
+    users = []
+    Etc.passwd do |user|
+      users << user.name if pattern === user.name
+    end
+    users
+  end
+
+  # Destroys users created by temp.
+  #
+  # @param [String] prefix match the prefix given to temp
+  # @return [Array<String>] names of users that were deleted
+  def self.destroy_temps(prefix = 'xsbx.rb')
+    # Matches the names created by temp.
+    pattern = /^#{prefix}\-[0-9a-f]+\.[0-9a-f]+\.[0-9a-f]+$/
+    # Each returns the collection that it iterates over.
+    self.named(pattern).each { |name| destroy name }
   end
 end  # module ExecSandbox::Users
   

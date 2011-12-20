@@ -2,7 +2,7 @@ source :rubygems
 # Add dependencies required to use your gem here.
 # Example:
 #   gem 'activesupport', '>= 2.3.5'
-gem 'ffi', '>= 1.0.9'
+gem 'ffi', '>= 1.0.11'
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.
