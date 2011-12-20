@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "exec_sandbox"
-  s.version = "0.1.3"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Victor Costan"]
@@ -38,6 +38,7 @@ Gem::Specification.new do |s|
     "spec/exec_sandbox/wait4_spec.rb",
     "spec/fixtures/buffer.rb",
     "spec/fixtures/churn.rb",
+    "spec/fixtures/count.rb",
     "spec/fixtures/duplicate.rb",
     "spec/fixtures/exit_arg.rb",
     "spec/fixtures/fork.rb",
@@ -49,7 +50,7 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/pwnall/exec_sandbox"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.11"
+  s.rubygems_version = "1.8.12"
   s.summary = "Run foreign binaries using POSIX sandboxing features"
 
   if s.respond_to? :specification_version then
