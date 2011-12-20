@@ -69,6 +69,35 @@ describe ExecSandbox::Spawn do
         @status[:exit_code].should_not == 0
       end
     end
+    
+    shared_examples_for 'count.rb' do
+      it 'should not crash' do
+        @status[:exit_code].should == 0
+      end
+      
+      it 'should write successfully' do
+        @temp_out.open
+        begin
+          @temp_out.read.should == (1..9).map { |i| "#{i}\n" }.join('')
+        ensure
+          @temp_out.close
+        end
+      end
+    end
+
+    describe 'with file descriptor and stderr redirected to stdout' do
+      before do
+        File.open(@temp_in.path, 'r') do |in_io|
+          File.open(@temp_out.path, 'w') do |out_io|
+            pid = ExecSandbox::Spawn.spawn [bin_fixture(:count), '9'],
+                {:in => in_io, :out => out_io, :err => STDOUT}
+            @status = ExecSandbox::Wait4.wait4 pid
+          end
+        end
+      end
+
+      it_behaves_like 'count.rb'
+    end
   end
 
   describe '#spawn principal' do

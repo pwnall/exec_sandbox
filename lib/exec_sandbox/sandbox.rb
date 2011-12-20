@@ -92,8 +92,11 @@ class Sandbox
   # @option options [String] :out path to a file that is set as the child's
   #     stdout; if not set, the child will receive the write end of a pipe whose
   #     contents is returned in :out_data
+  # @option options [Symbol] :err :none closes the child's stderr, :out
+  #     redirects the child's stderr to stdout; by default, the child's stderr
+  #     is the same as the parent's
   # @return [Hash] the result of {Wait4#wait4}, plus an :out_data key if no :out
-  #                option is given
+  #                option is given  
   def run(command, options = {})
     limits = options[:limits] || {}
     
@@ -113,7 +116,14 @@ class Sandbox
       out_rd, out_wr = IO.pipe
       io[:out] = out_wr
     end
-    io[:err] = STDERR unless options[:no_stderr]
+    case options[:err]
+    when :out
+      io[:err] = STDOUT
+    when :none
+      # Don't set io[:err], so the child's stderr will be closed.
+    else
+      io[:err] = STDERR
+    end
     
     pid = ExecSandbox::Spawn.spawn command, io, @principal, limits
     # Close the pipe ends that are meant to be used in the child.

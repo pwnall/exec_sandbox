@@ -8,23 +8,44 @@ describe ExecSandbox::Sandbox do
       @temp_in.close
       @temp_out = Tempfile.new 'exec_sandbox_rspec'
       @temp_out.close
-      
-      ExecSandbox.use do |s|
-        @result = s.run bin_fixture(:duplicate), :in => @temp_in.path,
-                                                 :out => @temp_out.path
-      end
     end
     after do
       @temp_in.unlink
       @temp_out.unlink
     end
 
-    it 'should not crash' do
-      @result[:exit_code].should == 0
+    describe 'duplicate.rb' do
+      before do
+        ExecSandbox.use do |s|
+          @result = s.run bin_fixture(:duplicate), :in => @temp_in.path,
+                                                   :out => @temp_out.path
+        end
+      end
+
+      it 'should not crash' do
+        @result[:exit_code].should == 0
+      end
+      
+      it 'should produce the correct result' do
+        File.read(@temp_out.path).should == "I/O test\nI/O test\n" 
+      end
     end
-    
-    it 'should produce the correct result' do
-      File.read(@temp_out.path).should == "I/O test\nI/O test\n" 
+
+    describe 'count.rb' do
+      before do
+        ExecSandbox.use do |s|
+          @result = s.run [bin_fixture(:count), '9'], :in => @temp_in.path,
+              :out => @temp_out.path, :err => :out
+        end
+      end
+      
+      it 'should not crash' do
+        @result[:exit_code].should == 0
+      end
+      
+      it 'should produce the correct result' do
+        File.read(@temp_out.path).should == (1..9).map { |i| "#{i}\n" }.join('')
+      end
     end
   end
   
@@ -59,6 +80,22 @@ describe ExecSandbox::Sandbox do
       
       it 'should produce the correct result' do
         @result[:out_data].should == "S" * buffer_size
+      end
+    end
+    
+    describe 'count.rb' do
+      before do
+        ExecSandbox.use do |s|
+          @result = s.run [bin_fixture(:count), '9'], :err => :out
+        end
+      end
+      
+      it 'should not crash' do
+        @result[:exit_code].should == 0
+      end
+      
+      it 'should produce the correct result' do
+        @result[:out_data].should == (1..9).map { |i| "#{i}\n" }.join('')
       end
     end
   end

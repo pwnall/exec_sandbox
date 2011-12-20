@@ -6,6 +6,7 @@ require 'English'
 require 'etc'
 require 'fcntl'
 require 'fileutils'
+require 'set'
 require 'tempfile'
 require 'tmpdir'
 

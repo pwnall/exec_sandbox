@@ -28,32 +28,44 @@ module Spawn
   # @param [Hash] io associates file descriptors with IO objects or file paths;
   #                  all file descriptors not covered by io will be closed
   def self.limit_io(io)
+    # Sort the list of redirections by file descriptor number.
+    redirects = []
     [:in, :out, :err].each_with_index do |sym, fd_num|
-      if target = io.delete(sym)
-        io[fd_num] = target
+      if target = io[sym]
+        redirects << [fd_num, redirects.length, target]
       end
     end
     io.each do |k, v|
-      if v.respond_to?(:fileno)
-        if v.fileno != k
-          LibC.close k
-          LibC.dup2 v.fileno, k
+      if k.kind_of? Integer
+        redirects << [k, redirects.length, v]
+      end
+    end
+    
+    # Perform the redirections.
+    redirects.sort!
+    redirects.each do |fd_num, _, target|    
+      if target.respond_to?(:fileno)
+        # IO stream.
+        if target.fileno != fd_num
+          LibC.close fd_num
+          LibC.dup2 target.fileno, fd_num
         end
       else
-        LibC.close k
-        open_fd = IO.sysopen(v, 'r+')
-        if open_fd != k
-          LibC.dup2 open_fd, k
+        # Filename string.
+        LibC.close fd_num
+        open_fd = IO.sysopen(target, 'r+')
+        if open_fd != fd_num
+          LibC.dup2 open_fd, fd_num
           LibC.close open_fd
         end
       end
     end
     
-    # Close all file descriptors.
+    # Close all file descriptors not in the redirection table.
+    redirected_fds = Set.new redirects.map(&:first)
     max_fd = LibC.getdtablesize
     0.upto(max_fd) do |fd|
-      next if io[fd]
-      LibC.close fd
+      LibC.close fd unless redirected_fds.include?(fd)
     end
   end
   
