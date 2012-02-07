@@ -84,7 +84,7 @@ class Sandbox
   # @param [Array, String] command to be run; use an array to pass arguments to
   #                        the command
   # @param [Hash] options stdin / stdout redirection and resource limitations
-  # @option options [Hash] :limits see {Spawn#set_limits}
+  # @option options [Hash] :limits see {Spawn.limit_resources}
   # @option options [String] :in path to a file that is set as the child's stdin
   # @option options [String] :in_data contents to be written to a pipe that is
   #     set as the child's stdin; if neither :in nor :in_data are specified, the
@@ -95,7 +95,7 @@ class Sandbox
   # @option options [Symbol] :err :none closes the child's stderr, :out
   #     redirects the child's stderr to stdout; by default, the child's stderr
   #     is the same as the parent's
-  # @return [Hash] the result of {Wait4#wait4}, plus an :out_data key if no :out
+  # @return [Hash] the result of {Wait4.wait4}, plus an :out_data key if no :out
   #                option is given  
   def run(command, options = {})
     limits = options[:limits] || {}
@@ -172,6 +172,8 @@ end  # module ExecSandbox::Sandbox
   #
   # @param [String] admin the name of a user who will be able to peek into the
   #                       sandbox (optional)
+  # @yieldparam [Sandbox] sandbox a Sandbox instance that will be automatically
+  #                               destroyed after the block returns
   # @return the value returned from the block passed to this method
   def self.use(admin = Etc.getlogin, &block)
     sandbox = ExecSandbox::Sandbox.new admin
@@ -190,7 +192,7 @@ end  # module ExecSandbox::Sandbox
   #
   # @param [String] admin the name of a user who will be able to peek into the
   #                       sandbox (optional)
-  # @return the value returned from the block passed to this method
+  # @return [Sandbox] the newly created sandbox
   def self.open(admin = Etc.getlogin)
     ExecSandbox::Sandbox.new admin
   end
