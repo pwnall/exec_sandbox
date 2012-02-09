@@ -227,11 +227,11 @@ describe ExecSandbox::Spawn do
       File.unlink(@temp_path) if File.exist?(@temp_path)
     end
     
-    describe 'buffer.rb' do
+    describe 'buffer.rb with 512 megs' do
       describe 'without limitations' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
-              (100 * 1024 * 1024).to_s], {:err => STDERR}, {}, {}
+              (512 * 1024 * 1024).to_s], {:err => STDERR}, {}, {}
           @status = ExecSandbox::Wait4.wait4 pid
         end
 
@@ -239,15 +239,15 @@ describe ExecSandbox::Spawn do
           @status[:exit_code].should == 0
         end
         
-        it 'should output 100 megs' do
-          File.stat(@temp_path).size.should == 100 * 1024 * 1024
+        it 'should output 512 megs' do
+          File.stat(@temp_path).size.should == 512 * 1024 * 1024
         end
       end
       
-      describe 'with memory limitation' do
+      describe 'with 256mb memory limitation' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
-              (100 * 1024 * 1024).to_s], {}, {}, {:data => 64 * 1024 * 1024}
+              (512 * 1024 * 1024).to_s], {}, {}, {:data => 256 * 1024 * 1024}
           @status = ExecSandbox::Wait4.wait4 pid
         end
         
@@ -260,10 +260,11 @@ describe ExecSandbox::Spawn do
         end
       end
       
-      describe 'with output limitation' do
+      describe 'with 256mb output limitation' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
-              (100 * 1024 * 1024).to_s], {}, {}, {:file_size => 8 * 1024 * 1024}
+              (512 * 1024 * 1024).to_s], {}, {},
+              {:file_size => 64 * 1024 * 1024}
           @status = ExecSandbox::Wait4.wait4 pid
         end
         
@@ -271,11 +272,55 @@ describe ExecSandbox::Spawn do
           @status[:exit_code].should_not == 0
         end
         
-        it 'should not output more than 16 megs' do
-          File.stat(@temp_path).size.should <= 16 * 1024 * 1024
+        it 'should not output more than 256 megs' do
+          File.stat(@temp_path).size.should <= 256 * 1024 * 1024
         end
       end
     end
+    
+    describe 'buffer.rb with 128 megs' do
+      shared_examples_for 'working' do
+        it 'should not crash' do
+          @status[:exit_code].should == 0
+        end
+        
+        it 'should output 128 megs' do
+          File.stat(@temp_path).size.should == 128 * 1024 * 1024
+        end
+      end
+      
+      describe 'without limitations' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
+              (128 * 1024 * 1024).to_s], {:err => STDERR}, {}, {}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+
+        it_behaves_like 'working'
+      end
+      
+      describe 'with 256mb memory limitation' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
+              (128 * 1024 * 1024).to_s], {}, {}, {:data => 256 * 1024 * 1024}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+        
+        it_behaves_like 'working'
+      end
+      
+      describe 'with 256mb output limitation' do
+        before do
+          pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
+              (128 * 1024 * 1024).to_s], {}, {},
+              {:file_size => 256 * 1024 * 1024}
+          @status = ExecSandbox::Wait4.wait4 pid
+        end
+        
+        it_behaves_like 'working'
+      end
+    end
+    
     
     describe 'fork.rb' do
       describe 'without limitations' do

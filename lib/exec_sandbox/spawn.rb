@@ -82,8 +82,7 @@ module Spawn
       begin
         Process::Sys.setresgid principal[:gid], principal[:gid], principal[:gid]
       rescue NotImplementedError
-        Process.gid = principal[:gid]
-        Process.egid = principal[:gid]
+        Process::Sys.setgid principal[:gid]
       end
     end
     if principal[:uid]
@@ -96,8 +95,7 @@ module Spawn
       begin
         Process::Sys.setresuid principal[:uid], principal[:uid], principal[:uid]
       rescue NotImplementedError
-        Process.uid = principal[:uid]
-        Process.euid = principal[:uid]
+        Process::Sys.setuid principal[:uid]
       end
     end
   end
@@ -137,8 +135,11 @@ module Spawn
                                                 limits[:open_files]
     end
     if limits[:data]
+      Process.setrlimit Process::RLIMIT_AS, limits[:data], limits[:data]
       Process.setrlimit Process::RLIMIT_DATA, limits[:data], limits[:data]
       Process.setrlimit Process::RLIMIT_STACK, limits[:data], limits[:data]
+      Process.setrlimit Process::RLIMIT_MEMLOCK, limits[:data], limits[:data]
+      Process.setrlimit Process::RLIMIT_RSS, limits[:data], limits[:data]
     end
   end
   

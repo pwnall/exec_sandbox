@@ -8,10 +8,11 @@ gem 'ffi', '>= 1.0.11'
 # Include everything needed to run rake, tests, features, etc.
 group :development do
   gem 'rdoc', '>= 3.10'
-  gem 'rspec', '>= 2.6.0'
-  gem 'yard', '>= 0.7.2'
+  gem 'rspec', '>= 2.8.0'
+  gem 'yard', '>= 0.7.5'
   gem 'yard-rspec', '>= 0.1'
   gem 'bundler', '>= 1.0.21'
-  gem 'jeweler', '>= 1.6.4'
-  gem 'rcov', '>= 0'
+  gem 'jeweler', '>= 1.8.3'
+  gem 'rcov', '>= 0', :platform => [:mri_18]
+  gem 'simplecov', '>= 0', :platform => [:mri_19]
 end
