@@ -120,26 +120,32 @@ module Spawn
   #     everything into swap
   def self.limit_resources(limits)
     if limits[:cpu]
-      Process.setrlimit Process::RLIMIT_CPU, limits[:cpu], limits[:cpu]
+      _setrlimit Process::RLIMIT_CPU, limits[:cpu]
     end
     if limits[:processes]
-      Process.setrlimit Process::RLIMIT_NPROC, limits[:processes],
-                                               limits[:processes]
+      _setrlimit Process::RLIMIT_NPROC, limits[:processes]
     end
     if limits[:file_size]
-      Process.setrlimit Process::RLIMIT_FSIZE, limits[:file_size],
-                                               limits[:file_size]
+      _setrlimit Process::RLIMIT_FSIZE, limits[:file_size]
     end
     if limits[:open_files]
-      Process.setrlimit Process::RLIMIT_NOFILE, limits[:open_files],
-                                                limits[:open_files]
+      _setrlimit Process::RLIMIT_NOFILE, limits[:open_files]
     end
     if limits[:data]
-      Process.setrlimit Process::RLIMIT_AS, limits[:data], limits[:data]
-      Process.setrlimit Process::RLIMIT_DATA, limits[:data], limits[:data]
-      Process.setrlimit Process::RLIMIT_STACK, limits[:data], limits[:data]
-      Process.setrlimit Process::RLIMIT_MEMLOCK, limits[:data], limits[:data]
-      Process.setrlimit Process::RLIMIT_RSS, limits[:data], limits[:data]
+      _setrlimit Process::RLIMIT_AS, limits[:data]
+      _setrlimit Process::RLIMIT_DATA, limits[:data]
+      _setrlimit Process::RLIMIT_STACK, limits[:data]
+      _setrlimit Process::RLIMIT_MEMLOCK, limits[:data]
+      _setrlimit Process::RLIMIT_RSS, limits[:data]
+    end
+  end
+  
+  # Wrapper for Process.setrlimit that eats exceptions.
+  def self._setrlimit(limit, value)
+    begin
+      Process.setrlimit limit, value, value
+    rescue Errno::EPERM
+      # The call failed, probably because the limit is already lower than this.
     end
   end
   
