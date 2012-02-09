@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "exec_sandbox"
-  s.version = "0.2.0"
+  s.version = "0.2.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Victor Costan"]
-  s.date = "2011-12-20"
+  s.date = "2012-02-09"
   s.description = "Temporary users and groups, rlimits"
   s.email = "costan@gmail.com"
   s.extra_rdoc_files = [
@@ -50,7 +50,7 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/pwnall/exec_sandbox"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.12"
+  s.rubygems_version = "1.8.15"
   s.summary = "Run foreign binaries using POSIX sandboxing features"
 
   if s.respond_to? :specification_version then
@@ -59,31 +59,34 @@ Gem::Specification.new do |s|
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<ffi>, [">= 1.0.11"])
       s.add_development_dependency(%q<rdoc>, [">= 3.10"])
-      s.add_development_dependency(%q<rspec>, [">= 2.6.0"])
-      s.add_development_dependency(%q<yard>, [">= 0.7.2"])
+      s.add_development_dependency(%q<rspec>, [">= 2.8.0"])
+      s.add_development_dependency(%q<yard>, [">= 0.7.5"])
       s.add_development_dependency(%q<yard-rspec>, [">= 0.1"])
       s.add_development_dependency(%q<bundler>, [">= 1.0.21"])
-      s.add_development_dependency(%q<jeweler>, [">= 1.6.4"])
+      s.add_development_dependency(%q<jeweler>, [">= 1.8.3"])
       s.add_development_dependency(%q<rcov>, [">= 0"])
+      s.add_development_dependency(%q<simplecov>, [">= 0"])
     else
       s.add_dependency(%q<ffi>, [">= 1.0.11"])
       s.add_dependency(%q<rdoc>, [">= 3.10"])
-      s.add_dependency(%q<rspec>, [">= 2.6.0"])
-      s.add_dependency(%q<yard>, [">= 0.7.2"])
+      s.add_dependency(%q<rspec>, [">= 2.8.0"])
+      s.add_dependency(%q<yard>, [">= 0.7.5"])
       s.add_dependency(%q<yard-rspec>, [">= 0.1"])
       s.add_dependency(%q<bundler>, [">= 1.0.21"])
-      s.add_dependency(%q<jeweler>, [">= 1.6.4"])
+      s.add_dependency(%q<jeweler>, [">= 1.8.3"])
       s.add_dependency(%q<rcov>, [">= 0"])
+      s.add_dependency(%q<simplecov>, [">= 0"])
     end
   else
     s.add_dependency(%q<ffi>, [">= 1.0.11"])
     s.add_dependency(%q<rdoc>, [">= 3.10"])
-    s.add_dependency(%q<rspec>, [">= 2.6.0"])
-    s.add_dependency(%q<yard>, [">= 0.7.2"])
+    s.add_dependency(%q<rspec>, [">= 2.8.0"])
+    s.add_dependency(%q<yard>, [">= 0.7.5"])
     s.add_dependency(%q<yard-rspec>, [">= 0.1"])
     s.add_dependency(%q<bundler>, [">= 1.0.21"])
-    s.add_dependency(%q<jeweler>, [">= 1.6.4"])
+    s.add_dependency(%q<jeweler>, [">= 1.8.3"])
     s.add_dependency(%q<rcov>, [">= 0"])
+    s.add_dependency(%q<simplecov>, [">= 0"])
   end
 end
 
