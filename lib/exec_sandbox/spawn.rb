@@ -65,7 +65,18 @@ module Spawn
     redirected_fds = Set.new redirects.map(&:first)
     max_fd = LibC.getdtablesize
     0.upto(max_fd) do |fd|
-      LibC.close fd unless redirected_fds.include?(fd)
+      next if redirected_fds.include?(fd)
+      
+      # TODO(pwnall): this is slow; consider detecting the Ruby version and
+      #               only running it on buggy MRIs
+      begin
+        # This fails if rb_reserved_fd_p returns 0.
+        # In that case, we shouldn't close the FD, otherwise the VM will crash.
+        IO.new(fd)
+      rescue ArgumentError, Errno::EBADF
+        next
+      end
+      LibC.close fd
     end
   end
   

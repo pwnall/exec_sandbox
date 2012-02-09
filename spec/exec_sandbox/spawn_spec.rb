@@ -13,8 +13,20 @@ describe ExecSandbox::Spawn do
       @temp_in.close
       @temp_out = Tempfile.new 'exec_sandbox_rspec'
       @temp_out.close
+      
+      # Force-creating a 2nd thread to make MRI 1.9.3 crash without our fix.
+      @lock = Mutex.new
+      @lock.lock
+      Thread.new do
+        loop do
+          sleep 0.1
+          break if @lock.try_lock
+        end
+        @lock.unlock
+      end
     end
     after do
+      @lock.unlock
       @temp_in.unlink
       @temp_out.unlink
     end
@@ -37,7 +49,8 @@ describe ExecSandbox::Spawn do
     describe 'with paths' do
       before do
         pid = ExecSandbox::Spawn.spawn bin_fixture(:duplicate),
-            {:in => @temp_in.path, :out => @temp_out.path}
+            {:in => @temp_in.path, :out => @temp_out.path,
+             :err => @temp_out.path}
         @status = ExecSandbox::Wait4.wait4 pid
       end
 

@@ -11,7 +11,9 @@ File.open(ARGV[0], 'wb') do |f|
   0.upto(proc_count - 1) do |i|
     pids[i] = fork do
       f.write '+'
+      f.close
       sleep 1
+      exit
     end
   end
   0.upto(proc_count - 1) { |i| Process.waitpid(pids[i]) }
