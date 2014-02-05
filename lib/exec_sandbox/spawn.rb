@@ -164,7 +164,7 @@ module Spawn
   # Maps an internal MRI function that we need.
   module RubyVM
     extend FFI::Library
-    ffi_lib RbConfig::CONFIG['LIBRUBY']
+    ffi_lib RbConfig::CONFIG['RUBY_SO_NAME']
     begin
       attach_function :rb_reserved_fd_p, [:int], :int
     rescue FFI::NotFoundError
