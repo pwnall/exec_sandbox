@@ -15,13 +15,13 @@ module Wait4
     raise SystemCallError, FFI.errno if returned_pid < 0
     status = { :bits => status_ptr.read_int }
     status_ptr.free
-    
+
     signal_code = status[:bits] & 0x7f
     status[:exit_code] = (signal_code != 0) ? -signal_code : status[:bits] >> 8
     status[:user_time] = rusage[:ru_utime_sec] +
                          rusage[:ru_utime_usec] * 0.000_001
     status[:system_time] = rusage[:ru_stime_sec] +
-                           rusage[:ru_stime_usec] * 0.000_001 
+                           rusage[:ru_stime_usec] * 0.000_001
     status[:rss] = rusage[:ru_maxrss] / 1024.0
     return status
   end
@@ -31,9 +31,9 @@ module Wait4
     extend FFI::Library
     ffi_lib FFI::Library::LIBC
     attach_function :wait4, [:int, :pointer, :int, :pointer], :int,
-                    :blocking => true
+                    blocking: true
   end  # module ExecSandbox::Wait4::Libc
-  
+
   # Maps struct rusage in sys/resource.h, used by wait4.
   class Rusage < FFI::Struct
     # Total amount of user time used.
@@ -81,5 +81,5 @@ module Wait4
   end  # struct ExecSandbox::Wait4::Rusage
 
 end  # module ExecSandbox::Wait4
-  
+
 end  # namespace ExecSandbox

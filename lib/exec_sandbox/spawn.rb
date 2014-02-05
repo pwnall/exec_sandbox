@@ -7,7 +7,7 @@ module Spawn
   #
   # @param [String, Array] command the command to be executed via exec
   # @param [Hash] io see limit_io
-  # @param [Hash] principal the principal for the enw process
+  # @param [Hash] principal the principal for the new process
   # @param [Hash] resources see limit_resources
   # @return [Fixnum] the child's PID
   def self.spawn(command, io = {}, principal = {}, resources = {})
@@ -40,10 +40,10 @@ module Spawn
         redirects << [k, redirects.length, v]
       end
     end
-    
+
     # Perform the redirections.
     redirects.sort!
-    redirects.each do |fd_num, _, target|    
+    redirects.each do |fd_num, _, target|
       if target.respond_to?(:fileno)
         # IO stream.
         if target.fileno != fd_num
@@ -60,26 +60,18 @@ module Spawn
         end
       end
     end
-    
+
     # Close all file descriptors not in the redirection table.
     redirected_fds = Set.new redirects.map(&:first)
     max_fd = LibC.getdtablesize
     0.upto(max_fd) do |fd|
       next if redirected_fds.include?(fd)
-      
-      # TODO(pwnall): this is slow; consider detecting the Ruby version and
-      #               only running it on buggy MRIs
-      begin
-        # This fails if rb_reserved_fd_p returns 0.
-        # In that case, we shouldn't close the FD, otherwise the VM will crash.
-        IO.new(fd)
-      rescue ArgumentError, Errno::EBADF
-        next
-      end
+
+      next if RubyVM.rb_reserved_fd_p(fd) != 0
       LibC.close fd
     end
   end
-  
+
   # Sets the process' principal for access control.
   #
   # @param [Hash] principal information about the process' principal
@@ -88,7 +80,7 @@ module Spawn
   # @option principal [Fixnum] :gid the new group ID
   def self.set_principal(principal)
     Dir.chdir principal[:dir] if principal[:dir]
-    
+
     if principal[:gid]
       begin
         Process::Sys.setresgid principal[:gid], principal[:gid], principal[:gid]
@@ -102,7 +94,7 @@ module Spawn
                            principal[:gid] || Process.gid
       rescue NotImplementedError
       end
-      
+
       begin
         Process::Sys.setresuid principal[:uid], principal[:uid], principal[:uid]
       rescue NotImplementedError
@@ -110,7 +102,7 @@ module Spawn
       end
     end
   end
-  
+
   # Constrains the resource usage of the current process.
   #
   # @param [Hash{Symbol => Number}] limits the constraints to be applied
@@ -150,7 +142,7 @@ module Spawn
       _setrlimit Process::RLIMIT_RSS, limits[:data]
     end
   end
-  
+
   # Wrapper for Process.setrlimit that eats exceptions.
   def self._setrlimit(limit, value)
     begin
@@ -159,7 +151,7 @@ module Spawn
       # The call failed, probably because the limit is already lower than this.
     end
   end
-  
+
   # Maps raw I/O functions.
   module LibC
     extend FFI::Library
@@ -168,6 +160,28 @@ module Spawn
     attach_function :getdtablesize, [], :int
     attach_function :dup2, [:int, :int], :int
   end  # module ExecSandbox::Spawn::Libc
+
+  # Maps an internal MRI function that we need.
+  module RubyVM
+    extend FFI::Library
+    ffi_lib RbConfig::CONFIG['LIBRUBY']
+    begin
+      attach_function :rb_reserved_fd_p, [:int], :int
+    rescue FFI::NotFoundError
+      # Emulation of internal MRI function.
+      #
+      # This is a fallback, used in case FFI can't find the MRI function.
+      def self.rb_reserved_fd_p(fd)
+        begin
+          # This fails if rb_reserved_fd_p returns a non-zero value.
+          IO.new fd
+          return 0
+        rescue ArgumentError, Errno::EBADF
+          return 1
+        end
+      end
+    end
+  end
 end  # module ExecSandbox::Spawn
-  
+
 end  # namespace ExecSandbox
