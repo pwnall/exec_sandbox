@@ -79,6 +79,7 @@ describe ExecSandbox::Sandbox do
       end
 
       it 'should produce the correct result' do
+        @result[:out_data].length.should == buffer_size
         @result[:out_data].should == "S" * buffer_size
       end
     end
