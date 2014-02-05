@@ -17,8 +17,8 @@ describe ExecSandbox::Sandbox do
     describe 'duplicate.rb' do
       before do
         ExecSandbox.use do |s|
-          @result = s.run bin_fixture(:duplicate), :in => @temp_in.path,
-                                                   :out => @temp_out.path
+          @result = s.run bin_fixture(:duplicate), in: @temp_in.path,
+                                                   out: @temp_out.path
         end
       end
 
@@ -34,8 +34,8 @@ describe ExecSandbox::Sandbox do
     describe 'count.rb' do
       before do
         ExecSandbox.use do |s|
-          @result = s.run [bin_fixture(:count), '9'], :in => @temp_in.path,
-              :out => @temp_out.path, :err => :out
+          @result = s.run [bin_fixture(:count), '9'], in: @temp_in.path,
+              out: @temp_out.path, err: :out
         end
       end
 
@@ -53,7 +53,7 @@ describe ExecSandbox::Sandbox do
     describe 'duplicate.rb' do
       before do
         ExecSandbox.use do |s|
-          @result = s.run bin_fixture(:duplicate), :in_data => "Pipe test\n"
+          @result = s.run bin_fixture(:duplicate), in_data: "Pipe test\n"
         end
       end
 
@@ -86,7 +86,7 @@ describe ExecSandbox::Sandbox do
     describe 'count.rb' do
       before do
         ExecSandbox.use do |s|
-          @result = s.run [bin_fixture(:count), '9'], :err => :out
+          @result = s.run [bin_fixture(:count), '9'], err: :out
         end
       end
 
@@ -136,7 +136,7 @@ describe ExecSandbox::Sandbox do
         before do
           ExecSandbox.use do |s|
             @result = s.run [bin_fixture(:churn), 'stdout', 3.to_s],
-                            :limits => {:cpu => 1}
+                            limits: {cpu: 1}
             s.pull 'stdout', @temp_out.path
           end
         end

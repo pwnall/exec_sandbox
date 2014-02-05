@@ -26,7 +26,7 @@ class Sandbox
     @destroyed = false
     
     # principal argument for Spawn.spawn()
-    @principal = { :uid => @user_uid, :gid => @user_gid, :dir => @path }
+    @principal = { uid: @user_uid, gid: @user_gid, dir: @path }
   end
   
   # Copies a file or directory to the sandbox.

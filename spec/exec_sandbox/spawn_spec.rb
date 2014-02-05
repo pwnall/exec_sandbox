@@ -49,8 +49,8 @@ describe ExecSandbox::Spawn do
     describe 'with paths' do
       before do
         pid = ExecSandbox::Spawn.spawn bin_fixture(:duplicate),
-            {:in => @temp_in.path, :out => @temp_out.path,
-             :err => @temp_out.path}
+            {in: @temp_in.path, out: @temp_out.path,
+             err: @temp_out.path}
         @status = ExecSandbox::Wait4.wait4 pid
       end
 
@@ -62,7 +62,7 @@ describe ExecSandbox::Spawn do
         File.open(@temp_in.path, 'r') do |in_io|
           File.open(@temp_out.path, 'w') do |out_io|
             pid = ExecSandbox::Spawn.spawn bin_fixture(:duplicate),
-                {:in => in_io, :out => out_io, :err => STDERR}
+                {in: in_io, out: out_io, err: STDERR}
             @status = ExecSandbox::Wait4.wait4 pid
           end
         end
@@ -74,7 +74,7 @@ describe ExecSandbox::Spawn do
     describe 'without stdout' do
       before do
         pid = ExecSandbox::Spawn.spawn bin_fixture(:duplicate),
-                                       {:in => @temp_in.path}
+                                       {in: @temp_in.path}
         @status = ExecSandbox::Wait4.wait4 pid
       end
       
@@ -103,7 +103,7 @@ describe ExecSandbox::Spawn do
         File.open(@temp_in.path, 'r') do |in_io|
           File.open(@temp_out.path, 'w') do |out_io|
             pid = ExecSandbox::Spawn.spawn [bin_fixture(:count), '9'],
-                {:in => in_io, :out => out_io, :err => STDOUT}
+                {in: in_io, out: out_io, err: STDOUT}
             @status = ExecSandbox::Wait4.wait4 pid
           end
         end
@@ -126,8 +126,8 @@ describe ExecSandbox::Spawn do
     describe 'with root credentials' do
       before do
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
-            @temp_path, "Spawn uid test\n"], {:err => STDERR},
-            {:uid => 0, :gid => 0}
+            @temp_path, "Spawn uid test\n"], {err: STDERR},
+            {uid: 0, gid: 0}
         @status = ExecSandbox::Wait4.wait4 pid
         @fstat = File.stat(@temp_path)
       end
@@ -152,8 +152,8 @@ describe ExecSandbox::Spawn do
       before do
         @temp.unlink
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
-            @temp_path, "Spawn uid test\n"], {:err => STDERR},
-            {:uid => test_uid, :gid => test_gid}
+            @temp_path, "Spawn uid test\n"], {err: STDERR},
+            {uid: test_uid, gid: test_gid}
         @status = ExecSandbox::Wait4.wait4 pid
       end
       
@@ -178,7 +178,7 @@ describe ExecSandbox::Spawn do
         File.chmod 0700, @temp_path
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg),
             @temp_path, "Spawn uid test\n"], {},
-            {:uid => test_uid, :gid => test_gid}
+            {uid: test_uid, gid: test_gid}
         @status = ExecSandbox::Wait4.wait4 pid
       end
       
@@ -196,7 +196,7 @@ describe ExecSandbox::Spawn do
         File.chmod 070, @temp_path
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:write_arg), @temp_path,
             "Spawn uid test\n"], {},
-            {:uid => test_uid, :gid => test_gid}
+            {uid: test_uid, gid: test_gid}
         @status = ExecSandbox::Wait4.wait4 pid
       end
       
@@ -213,7 +213,7 @@ describe ExecSandbox::Spawn do
       before do
         @temp_dir = Dir.mktmpdir 'exec_sandbox_rspec'
         pid = ExecSandbox::Spawn.spawn [bin_fixture(:pwd), @temp_path],
-            {}, {:dir => @temp_dir}        
+            {}, {dir: @temp_dir}        
         @status = ExecSandbox::Wait4.wait4 pid
       end
       after do
@@ -244,7 +244,7 @@ describe ExecSandbox::Spawn do
       describe 'without limitations' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
-              (512 * 1024 * 1024).to_s], {:err => STDERR}, {}, {}
+              (512 * 1024 * 1024).to_s], {err: STDERR}, {}, {}
           @status = ExecSandbox::Wait4.wait4 pid
         end
 
@@ -260,7 +260,7 @@ describe ExecSandbox::Spawn do
       describe 'with 256mb memory limitation' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
-              (512 * 1024 * 1024).to_s], {}, {}, {:data => 256 * 1024 * 1024}
+              (512 * 1024 * 1024).to_s], {}, {}, {data: 256 * 1024 * 1024}
           @status = ExecSandbox::Wait4.wait4 pid
         end
         
@@ -277,7 +277,7 @@ describe ExecSandbox::Spawn do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
               (512 * 1024 * 1024).to_s], {}, {},
-              {:file_size => 64 * 1024 * 1024}
+              {file_size: 64 * 1024 * 1024}
           @status = ExecSandbox::Wait4.wait4 pid
         end
         
@@ -305,7 +305,7 @@ describe ExecSandbox::Spawn do
       describe 'without limitations' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
-              (128 * 1024 * 1024).to_s], {:err => STDERR}, {}, {}
+              (128 * 1024 * 1024).to_s], {err: STDERR}, {}, {}
           @status = ExecSandbox::Wait4.wait4 pid
         end
 
@@ -315,7 +315,7 @@ describe ExecSandbox::Spawn do
       describe 'with 256mb memory limitation' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
-              (128 * 1024 * 1024).to_s], {}, {}, {:data => 256 * 1024 * 1024}
+              (128 * 1024 * 1024).to_s], {}, {}, {data: 256 * 1024 * 1024}
           @status = ExecSandbox::Wait4.wait4 pid
         end
         
@@ -326,7 +326,7 @@ describe ExecSandbox::Spawn do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:buffer), @temp_path,
               (128 * 1024 * 1024).to_s], {}, {},
-              {:file_size => 256 * 1024 * 1024}
+              {file_size: 256 * 1024 * 1024}
           @status = ExecSandbox::Wait4.wait4 pid
         end
         
@@ -339,7 +339,7 @@ describe ExecSandbox::Spawn do
       describe 'without limitations' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:fork), @temp_path,
-              10.to_s], {:err => STDERR}, {}, {}
+              10.to_s], {err: STDERR}, {}, {}
           @status = ExecSandbox::Wait4.wait4 pid
         end
 
@@ -355,7 +355,7 @@ describe ExecSandbox::Spawn do
       describe 'with sub-process limitation' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:fork), @temp_path,
-              10.to_s], {}, {}, {:processes => 4}
+              10.to_s], {}, {}, {processes: 4}
           @status = ExecSandbox::Wait4.wait4 pid
         end
         
@@ -373,7 +373,7 @@ describe ExecSandbox::Spawn do
       describe 'without limitations' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:churn), @temp_path,
-              3.to_s], {:err => STDERR}, {}, {}
+              3.to_s], {err: STDERR}, {}, {}
           @status = ExecSandbox::Wait4.wait4 pid
         end
 
@@ -393,7 +393,7 @@ describe ExecSandbox::Spawn do
       describe 'with CPU time limitation' do
         before do
           pid = ExecSandbox::Spawn.spawn [bin_fixture(:churn), @temp_path,
-              10.to_s], {}, {}, {:cpu => 1}
+              10.to_s], {}, {}, {cpu: 1}
           @status = ExecSandbox::Wait4.wait4 pid
         end
 

@@ -13,7 +13,7 @@ module Wait4
     rusage = ExecSandbox::Wait4::Rusage.new
     returned_pid = LibC.wait4(pid, status_ptr, 0, rusage.pointer)
     raise SystemCallError, FFI.errno if returned_pid < 0
-    status = { :bits => status_ptr.read_int }
+    status = { bits: status_ptr.read_int }
     status_ptr.free
 
     signal_code = status[:bits] & 0x7f
