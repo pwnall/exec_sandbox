@@ -64,7 +64,7 @@ module Spawn
     # Close all file descriptors not in the redirection table.
     redirected_fds = Set.new redirects.map(&:first)
     max_fd = LibC.getdtablesize
-    0.upto(max_fd) do |fd|
+    max_fd.downto 0 do |fd|
       next if redirected_fds.include?(fd)
 
       next if RubyVM.rb_reserved_fd_p(fd) != 0
@@ -164,10 +164,11 @@ module Spawn
   # Maps an internal MRI function that we need.
   module RubyVM
     extend FFI::Library
-    ffi_lib RbConfig::CONFIG['RUBY_SO_NAME']
+    ffi_lib FFI::Library::CURRENT_PROCESS
     begin
       attach_function :rb_reserved_fd_p, [:int], :int
     rescue FFI::NotFoundError
+      p 'Using fd_p emulation'
       # Emulation of internal MRI function.
       #
       # This is a fallback, used in case FFI can't find the MRI function.
