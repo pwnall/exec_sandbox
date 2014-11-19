@@ -9,21 +9,41 @@ module Wait4
   #                     this process
   # @return [Hash] exit code and resource usage information
   def self.wait4(pid)
-    status_ptr = FFI::MemoryPointer.new :int
-    rusage = ExecSandbox::Wait4::Rusage.new
-    returned_pid = LibC.wait4(pid, status_ptr, 0, rusage.pointer)
-    raise SystemCallError, FFI.errno if returned_pid < 0
-    status = { bits: status_ptr.read_int }
-    status_ptr.free
+    _wait4 pid, 0
+  end
 
-    signal_code = status[:bits] & 0x7f
-    status[:exit_code] = (signal_code != 0) ? -signal_code : status[:bits] >> 8
-    status[:user_time] = rusage[:ru_utime_sec] +
-                         rusage[:ru_utime_usec] * 0.000_001
-    status[:system_time] = rusage[:ru_stime_sec] +
-                           rusage[:ru_stime_usec] * 0.000_001
-    status[:rss] = rusage[:ru_maxrss] / 1024.0
-    return status
+  # Collects a child process' exit status and resource usage.
+  #
+  # @param [Fixnum] pid the PID of the process to wait for; should be a child of
+  #                     this process
+  # @return [Hash] exit code and resource usage information; nil if the process
+  #   hasn't terminated
+  def self.wait4_nonblock(pid)
+    _wait4 pid, WNOHANG
+  end
+
+  class <<self
+    # @private
+    def _wait4(pid, options)
+      status_ptr = FFI::MemoryPointer.new :int
+      rusage = ExecSandbox::Wait4::Rusage.new
+      returned_pid = LibC.wait4(pid, status_ptr, options, rusage.pointer)
+      raise SystemCallError, FFI.errno if returned_pid < 0
+      return nil if returned_pid == 0
+
+      status = { bits: status_ptr.read_int }
+      status_ptr.free
+
+      signal_code = status[:bits] & 0x7f
+      status[:exit_code] = (signal_code != 0) ? -signal_code : status[:bits] >> 8
+      status[:user_time] = rusage[:ru_utime_sec] +
+                           rusage[:ru_utime_usec] * 0.000_001
+      status[:system_time] = rusage[:ru_stime_sec] +
+                             rusage[:ru_stime_usec] * 0.000_001
+      status[:rss] = rusage[:ru_maxrss] / 1024.0
+      return status
+    end
+    private :_wait4
   end
 
   # Maps wait4 in libc.
@@ -33,6 +53,9 @@ module Wait4
     attach_function :wait4, [:int, :pointer, :int, :pointer], :int,
                     blocking: true
   end  # module ExecSandbox::Wait4::Libc
+
+  # Option passed to LibC::wait4.
+  WNOHANG = 1
 
   # Maps struct rusage in sys/resource.h, used by wait4.
   class Rusage < FFI::Struct
